@@ -1,8 +1,10 @@
-import React, { useState,useEffect } from 'react';
+import React, { useEffect,useState} from 'react';
 import TopBar from './components/TopBar';
 import User from './components/User'
 import UserErea from './components/UserErea';
 import styled from 'styled-components';
+import { useDispatch } from 'react-redux';
+import { fetchUsers } from './actions/userActions';
 
 //scroll pain-users
 const UserListStyle = styled.div`
@@ -28,7 +30,6 @@ const LeftDiv = styled.div`
 
 const RightDiv = styled.div`
   display: flex;
-  
   flex-direction: row;
   justify-content:space-evenly; 
   align-items:space-between; 
@@ -42,15 +43,14 @@ const ColomnDiv = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: flex-start; /* Align items to the left */
-  background-color:  ${props => props.isDark ? "#D3D3D3" : "#E6E6FA"};
+  background-color:  ${props => props.isdark ? "#D3D3D3" : "#E6E6FA"};
 `;
-function App(){
-  const [userWasPressed, setUserWasPressed]=useState(false);
-  const [chosenToDisplay, setChosenToDisplay]=useState({});
-  const [persons, setPersons] = useState([]);
-  const[chosenImgUrl,setChosenImgUrl]=useState('');
-  const[mode,setMode]=useState('LIGHT');
-  const[isDark,setIsDark]=useState(false);
+
+
+function App({handleDecrement,handleIncrement,persons,state,setWasPressed,wasPressed: userSelected,setChosenToDisplay,chosenToDisplay,
+  setChosenImgUrl,chosenImgUrl,setMode,mode}){
+  
+  const[isdark,setIsDark]=useState(false);
   
   function switchMode() {
     if (mode === 'DARK') {
@@ -61,57 +61,54 @@ function App(){
       setMode('DARK');
     }
 }
- 
-  useEffect(() => {
-    // Make a GET request to the server to fetch the object
-    fetch('http://localhost:5588/mocking_G/generate?library=examples&category=users&amount=10')
-      .then(response => response.json())
-      .then(data => {
-        // 'data' is now an array of objects
-        console.log(data);
-        setPersons(data); 
-      })
-      .catch(error => {
-        console.error('Error:', error);
-      });
-  }, []); // effect runs once after the initial render
 
-  
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    fetchUsers(dispatch);
+  }, [dispatch]);
+
+
+  const renderUserList = () => {
+    return (
+          persons && (persons?.length>0)
+          ?(
+            <UserListStyle>
+              {persons.map((person)=>(<User 
+                key={person.uuid}
+                user={person} 
+                updateUserWasPressed={(value)=>{setWasPressed(value)}} 
+                updateChosenUser={(user)=>{setChosenToDisplay(user)}}
+                updateImgUrl={(imgUrl)=>{setChosenImgUrl(imgUrl)}}
+                users={persons}/>))}
+            </UserListStyle>
+          ):(
+            <UserListStyle>
+                <StyledH3>{persons ? 'No users to display' : 'Loading...'}</StyledH3>
+            </UserListStyle>
+          )
+    )
+  }
   //when taking array with Map function to html elements, each element need to get a key
   return (
-    <ColomnDiv isDark={isDark}>
-        <TopBar user={chosenToDisplay} currMode={mode} ChangeModeColor={switchMode}/>
+    <ColomnDiv isdark={isdark}>
+      <div>
+        <h1>Helloworld React & Redux! {state.count}</h1>
+        <button onClick={handleDecrement}>Decrement</button>
+        <button onClick={handleIncrement}>Increment</button>
+      </div>
+      <TopBar user={chosenToDisplay} currMode={mode} ChangeModeColor={switchMode}/>
       <RowDiv>
         <LeftDiv>
-            {//display users if there are any
-              (persons?.length>0)
-              ?(
-                <UserListStyle >
-                  {persons.map((person)=>(<User 
-                    key={person.uuid}
-                    user={person} 
-                    updateUserWasPressed={(value)=>{setUserWasPressed(value)}} 
-                    updateChosenUser={(user)=>{setChosenToDisplay(user)}}
-                    updateImgUrl={(imgUrl)=>{setChosenImgUrl(imgUrl)}}
-                    users={persons}/>))}
-                </UserListStyle>
-              ):(
-                <UserListStyle>
-                    <StyledH3> no users do display</StyledH3>
-                </UserListStyle>
-              )
-            }
-          </LeftDiv>
-            <RightDiv>
-              {
-                (userWasPressed)?(
-                  <UserErea user={chosenToDisplay} picture={chosenImgUrl}/>
-                ):(
-                
-                  <StyledH3> press on a user to display </StyledH3>
-                )
-              }
-            </RightDiv>
+         { renderUserList() }
+        </LeftDiv>
+        <RightDiv>
+          {
+            userSelected
+            ? <UserErea user={chosenToDisplay} picture={chosenImgUrl}/>
+            : <StyledH3> press on a user to display </StyledH3>
+          }
+        </RightDiv>
       </RowDiv>
     </ColomnDiv>
   )   

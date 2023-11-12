@@ -70,7 +70,7 @@ const TopBar=({user,currMode,ChangeModeColor })=>{
 }
 export default TopBar
 
-TopBar.prototype={
+TopBar.propTypes={
   user:PropTypes.object,
   currMode:PropTypes.string,
   ChangeModeColor:PropTypes.func.isRequired
